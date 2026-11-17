@@ -84,7 +84,6 @@ step() {
     echo
     echo -e "${MAGENTA}╔══════════════════════════════════════════════════════════════╗${RESET}"
     printf "${MAGENTA}║${RESET} ${YELLOW}${BOLD}STEP %s${RESET}  ${WHITE}%s${RESET}" "$num" "$title"
-    # pad to width
     local used=$((8 + ${#num} + ${#title}))
     for ((p=used; p<62; p++)); do printf " "; done
     echo -e "${MAGENTA}║${RESET}"
@@ -133,7 +132,7 @@ detect_os() {
 
 # ─────────────────── SYSTEMD SERVICE ──────────────────────
 SERVICE_FILE="/etc/systemd/system/rfrs-bot.service"
-SERVICE_NAME="rfrs-bot"
+SERVICE_NAME="fvm"
 PROJECT_DIR="/root/fvm-panel"
 
 write_service() {
@@ -143,13 +142,13 @@ write_service() {
 #   Watermark: ROOTFAHIM
 # ────────────────────────────────────────────────
 [Unit]
-Description=FVM Panel Service (by RootFahim)
+Description=FVM Panel Service
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/fvm-panel
-ExecStart=/usr/bin/python3 /root/fvm-panel/fvm.py
+WorkingDirectory=/root
+ExecStart=/usr/bin/python3 /root/fvm.py
 Restart=always
 RestartSec=5
 User=root
@@ -167,7 +166,7 @@ install_fvm() {
     sleep 0.5
 
     # STEP 1: System update + deps
-    step "1/8" "Updating apt & Installing git..."
+    step "1/8" "Installing git..."
     export DEBIAN_FRONTEND=noninteractive
     run_spin "apt-get update" apt-get update -y
     run_spin "apt-get install git" apt-get install -y git
@@ -176,11 +175,11 @@ install_fvm() {
     # STEP 2: Clone repo
     step "2/8" "Cloning fvm-panel repository..."
     cd /root
-    rm -rf "$PROJECT_DIR"
+    rm -rf fvm-panel
     run_spin "git clone RootFahim/fvm-panel" \
-        git clone https://github.com/RootFahim/fvm-panel.git "$PROJECT_DIR"
-    cd "$PROJECT_DIR"
-    type_text "  >> Repository cloned to $PROJECT_DIR ✔" "$GREEN" 0.005
+        git clone https://github.com/RootFahim/fvm-panel.git fvm-panel
+    cd fvm-panel
+    type_text "  >> Repository cloned successfully ✔" "$GREEN" 0.005
 
     # STEP 3: Python pip
     step "3/8" "Installing python3-pip..."
@@ -207,7 +206,7 @@ install_fvm() {
     fi
 
     # STEP 6: Systemd service
-    step "6/8" "Writing systemd service (rfrs-bot)..."
+    step "6/8" "Writing systemd service..."
     write_service
     type_text "  >> Service file created: $SERVICE_FILE ✔" "$GREEN" 0.005
     type_text "  >> (Watermark: ROOTFAHIM embedded)" "$DIM" 0.003
@@ -232,7 +231,7 @@ install_fvm() {
    │                                                          │
    │      ✔  FVM PANEL INSTALLED SUCCESSFULLY!                │
    │                                                          │
-   │      Service : rfrs-bot.service                          │
+   │      Service : fvm.service                               │
    │      Path    : /root/fvm-panel                           │
    │      Env     : /root/fvm-panel/.env                      │
    │                                                          │
@@ -245,9 +244,9 @@ EOF
     type_text "  >> Panel is now live. Enjoy! (ROOTFAHIM)" "$CYAN" 0.02
     echo
     echo -e "${DIM}  Quick commands:${RESET}"
-    echo -e "    ${YELLOW}systemctl status rfrs-bot${RESET}    - check status"
-    echo -e "    ${YELLOW}systemctl restart rfrs-bot${RESET}   - restart"
-    echo -e "    ${YELLOW}journalctl -u rfrs-bot -f${RESET}    - live logs"
+    echo -e "    ${YELLOW}systemctl status fvm${RESET}    - check status"
+    echo -e "    ${YELLOW}systemctl restart fvm${RESET}   - restart"
+    echo -e "    ${YELLOW}journalctl -u fvm -f${RESET}    - live logs"
     echo
     echo -e "${MAGENTA}${BOLD}         ══════ [ ROOTFAHIM • FVM PANEL ] ══════${RESET}"
     echo
@@ -256,8 +255,7 @@ EOF
 # ─────────────────── MAIN MENU ────────────────────────────
 main_menu() {
     print_banner
-    type_text "  Welcome, $(whoami)! Please choose an option:" "$YELLOW" 0.01
-    echo
+    # Welcome text hata diya gaya hai, direct menu dikhega
     echo -e "  ${GREEN}[1]${RESET} Install FVM Panel (fresh setup)"
     echo -e "  ${GREEN}[2]${RESET} Update / Re-clone repository"
     echo -e "  ${GREEN}[3]${RESET} Restart service"
@@ -272,9 +270,9 @@ main_menu() {
         2)
             step "→" "Updating repository..."
             cd /root
-            rm -rf "$PROJECT_DIR"
-            run_spin "Re-cloning repo" git clone https://github.com/RootFahim/fvm-panel.git "$PROJECT_DIR"
-            cd "$PROJECT_DIR"
+            rm -rf fvm-panel
+            run_spin "Re-cloning repo" git clone https://github.com/RootFahim/fvm-panel.git fvm-panel
+            cd fvm-panel
             [[ -f requirements.txt ]] && ( pip3 install -r requirements.txt >/dev/null 2>&1 ) &
             spinner "$!" "Reinstalling requirements"
             [[ -f test.env ]] && cp test.env .env
@@ -297,7 +295,7 @@ main_menu() {
                 systemctl stop "$SERVICE_NAME" 2>/dev/null || true
                 systemctl disable "$SERVICE_NAME" 2>/dev/null || true
                 rm -f "$SERVICE_FILE"
-                rm -rf "$PROJECT_DIR"
+                rm -rf /root/fvm-panel
                 systemctl daemon-reload
                 type_text "  >> FVM Panel uninstalled. (ROOTFAHIM)" "$GREEN"
             else
