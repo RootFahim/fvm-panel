@@ -1,15 +1,12 @@
-#!/usr/bin/env bash
-#
-# ╔══════════════════════════════════════════════════════════════╗
-# ║   FVM PANEL AUTO INSTALLER  •  Powered by ROOTFAHIM          ║
-# ║   Author  : RootFahim                                        ║
-# ║   GitHub  : https://github.com/RootFahim                     ║
-# ║   Watermark: ROOTFAHIM                                       ║
-# ╚══════════════════════════════════════════════════════════════╝
+#!/bin/bash
+#=============================================================
+#   ROOTFAHIM FVM PANEL INSTALLER
+#   Author  : ROOTFAHIM
+#   Github  : https://github.com/RootFahim
+#   Watermark: ROOTFAHIM - Everywhere 💀
+#=============================================================
 
-set -euo pipefail
-
-# ───────────────────────── COLORS ─────────────────────────
+# ------- ROOTFAHIM COLORS -------
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
@@ -19,134 +16,184 @@ CYAN='\033[1;36m'
 WHITE='\033[1;37m'
 DIM='\033[2m'
 BOLD='\033[1m'
-RESET='\033[0m'
+NC='\033[0m'
 
-# ───────────────────── WATERMARK BANNER ───────────────────
-print_banner() {
-    clear
-    echo -e "${CYAN}"
-    cat << "EOF"
-  ██████╗  ██████╗  ██████╗ ████████╗███████╗ █████╗ ██╗  ██╗██╗███╗   ███╗
-  ██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝██╔════╝██╔══██╗██║  ██║██║████╗ ████║
-  ██████╔╝██║   ██║██║   ██║   ██║   █████╗  ███████║███████║██║██╔████╔██║
-  ██╔══██╗██║   ██║██║   ██║   ██║   ██╔══╝  ██╔══██║██╔══██║██║██║╚██╔╝██║
-  ██║  ██║╚██████╔╝╚██████╔╝   ██║   ██║     ██║  ██║██║  ██║██║██║ ╚═╝ ██║
-  ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝
-EOF
-    echo -e "${MAGENTA}${BOLD}"
-    echo "     ███████╗██╗   ██╗███╗   ███╗    ██████╗  █████╗ ███╗   ██╗███████╗██╗     "
-    echo "     ██╔════╝██║   ██║████╗ ████║    ██╔══██╗██╔══██╗████╗  ██║██╔════╝██║     "
-    echo "     █████╗  ██║   ██║██╔████╔██║    ██████╔╝███████║██╔██╗ ██║█████╗  ██║     "
-    echo "     ██╔══╝  ╚██╗ ██╔╝██║╚██╔╝██║    ██╔═══╝ ██╔══██║██║╚██╗██║██╔══╝  ██║     "
-    echo "     ██║      ╚████╔╝ ██║ ╚═╝ ██║    ██║     ██║  ██║██║ ╚████║███████╗███████╗"
-    echo "     ╚═╝       ╚═══╝  ╚═╝     ╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝"
-    echo -e "${RESET}"
-    echo -e "${YELLOW}${DIM}          ══════════ [ WATERMARK: ROOTFAHIM ] ══════════${RESET}"
-    echo -e "${GREEN}${BOLD}             >> FVM PANEL AUTOMATED BASH INSTALLER <<${RESET}"
-    echo
-}
+# ------- ROOTFAHIM GLOBAL VARS -------
+REPO_URL="https://github.com/RootFahim/fvm-panel"
+INSTALL_DIR="/root/fvm-panel"
+SERVICE_NAME="fvm"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+WATERMARK="ROOTFAHIM"
 
-# ───────────────────── ANIMATED TYPING ────────────────────
-type_text() {
+# ------- TYPE WRITER EFFECT -------
+typewriter() {
     local text="$1"
-    local color="${2:-$WHITE}"
-    local delay="${3:-0.02}"
-    printf "%b" "$color"
+    local delay="${2:-0.02}"
     for ((i=0; i<${#text}; i++)); do
         printf "%s" "${text:$i:1}"
         sleep "$delay"
     done
-    printf "%b\n" "$RESET"
+    echo
 }
 
-# ─────────────────── SPINNER / LOADER ─────────────────────
+# ------- SPINNER ANIMATION -------
 spinner() {
     local pid=$1
     local msg="$2"
-    local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
-    local colors=("$CYAN" "$BLUE" "$MAGENTA")
+    local spin=('⣾' '⣽' '⣻' '⢿' '⡿' '⣟' '⣯' '⣷')
     local i=0
+    tput civis 2>/dev/null
     while kill -0 "$pid" 2>/dev/null; do
-        local c="${colors[$((i % ${#colors[@]}))]}"
-        printf "\r  ${c}%s${RESET}  ${WHITE}%s${RESET}   ${DIM}[ROOTFAHIM]${RESET}" \
-            "${frames[$((i % ${#frames[@]}))]}" "$msg"
-        i=$((i + 1))
-        sleep 0.08
+        printf "\r${CYAN}  %s ${WHITE}%s ${DIM}[ROOTFAHIM]${NC}" "${spin[$i]}" "$msg"
+        i=$(( (i+1) % 8 ))
+        sleep 0.1
     done
-    printf "\r  ${GREEN}✔${RESET}  ${WHITE}%s${RESET}   ${DIM}[ROOTFAHIM]${RESET}\n" "$msg"
-}
-
-# ─────────────────── STEP HEADER ──────────────────────────
-step() {
-    local num="$1"
-    local title="$2"
-    echo
-    echo -e "${MAGENTA}╔══════════════════════════════════════════════════════════════╗${RESET}"
-    printf "${MAGENTA}║${RESET} ${YELLOW}${BOLD}STEP %s${RESET}  ${WHITE}%s${RESET}" "$num" "$title"
-    local used=$((8 + ${#num} + ${#title}))
-    for ((p=used; p<62; p++)); do printf " "; done
-    echo -e "${MAGENTA}║${RESET}"
-    echo -e "${MAGENTA}╚══════════════════════════════════════════════════════════════╝${RESET}"
-}
-
-# ─────────────────── RUN WITH SPINNER ─────────────────────
-run_spin() {
-    local msg="$1"
-    shift
-    ( "$@" >/dev/null 2>&1 ) &
-    local pid=$!
-    spinner "$pid" "$msg"
     wait "$pid"
+    local exit_code=$?
+    printf "\r\033[K"
+    tput cnorm 2>/dev/null
+    if [ "$exit_code" -eq 0 ]; then
+        echo -e "${GREEN}  ✔ ${WHITE}${msg} ${DIM}[ROOTFAHIM]${NC}"
+    else
+        echo -e "${RED}  ✘ ${WHITE}${msg} ${DIM}[ROOTFAHIM]${NC}"
+        return "$exit_code"
+    fi
 }
 
-# ─────────────────── ERROR TRAP ───────────────────────────
-on_error() {
+# ------- PROGRESS BAR -------
+progress_bar() {
+    local duration=$1
+    local label="$2"
+    local width=40
+    echo -e "${MAGENTA}  ${label} ${DIM}(ROOTFAHIM)${NC}"
+    for ((i=0; i<=width; i++)); do
+        local filled=$(printf "%${i}s" | tr ' ' '█')
+        local empty=$(printf "%$((width-i))s" | tr ' ' '░')
+        local percent=$((i * 100 / width))
+        printf "\r  ${GREEN}[${filled}${DIM}${empty}${NC}${GREEN}] ${WHITE}${percent}%%${NC}"
+        sleep "$(echo "scale=3; $duration/$width" | bc)"
+    done
     echo
-    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${RED}║  ✖ INSTALLATION FAILED at line $1                            ${RESET}"
-    echo -e "${RED}║  Please check the error above. ROOTFAHIM                     ${RESET}"
-    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${RESET}"
-    exit 1
 }
-trap 'on_error $LINENO' ERR
 
-# ─────────────────── ROOT CHECK ───────────────────────────
+# ------- WATERMARK FOOTER -------
+wm_footer() {
+    echo -e "${DIM}  ─────────────────────────────────────────────${NC}"
+    echo -e "${DIM}   Powered by ${MAGENTA}${BOLD}ROOTFAHIM${NC}${DIM}  |  GitHub: /RootFahim${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────${NC}"
+}
+
+# ------- ASCII BANNER -------
+show_banner() {
+    clear
+    echo -e "${MAGENTA}"
+    cat << "EOF"
+    ██████╗  ██████╗  ██████╗ ████████╗███████╗ █████╗ ██╗  ██╗██╗███╗   ███╗
+    ██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝██╔════╝██╔══██╗██║  ██║██║████╗ ████║
+    ██████╔╝██║   ██║██║   ██║   ██║   █████╗  ███████║███████║██║██╔████╔██║
+    ██╔══██╗██║   ██║██║   ██║   ██║   ██╔══╝  ██╔══██║██╔══██║██║██║╚██╔╝██║
+    ██║  ██║╚██████╔╝╚██████╔╝   ██║   ██║     ██║  ██║██║  ██║██║██║ ╚═╝ ██║
+    ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝   ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝
+EOF
+    echo -e "${CYAN}"
+    cat << "EOF"
+        ███████╗██╗   ██╗███╗   ███╗    ██████╗  █████╗ ███╗   ██╗███████╗██╗
+        ██╔════╝██║   ██║████╗ ████║    ██╔══██╗██╔══██╗████╗  ██║██╔════╝██║
+        █████╗  ██║   ██║██╔████╔██║    ██████╔╝███████║██╔██╗ ██║█████╗  ██║
+        ██╔══╝  ╚██╗ ██╔╝██║╚██╔╝██║    ██╔═══╝ ██╔══██║██║╚██╗██║██╔══╝  ██║
+        ██║      ╚████╔╝ ██║ ╚═╝ ██║    ██║     ██║  ██║██║ ╚████║███████╗███████╗
+        ╚═╝       ╚═══╝  ╚═╝     ╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
+EOF
+    echo -e "${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${YELLOW}      ⚡ Automated Installer ${DIM}|${NC} ${MAGENTA}Made by ROOTFAHIM${NC} ${DIM}|${NC} ${CYAN}v1.0${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────────────────────────────${NC}"
+    echo
+    sleep 0.5
+    typewriter "  ➤ Initializing ROOTFAHIM FVM Panel Deployment..." 0.015
+    echo
+}
+
+# ------- CHECK ROOT -------
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}${BOLD}✖ This installer must be run as ROOT!${RESET}"
-        echo -e "${YELLOW}  Try: ${WHITE}sudo bash installer.sh${RESET}"
+        echo -e "${RED}  ✘ Please run as ROOT! ${DIM}[ROOTFAHIM]${NC}"
+        echo -e "${YELLOW}    Try: ${WHITE}sudo bash installer.sh${NC}"
         exit 1
     fi
 }
 
-# ─────────────────── OS DETECT ────────────────────────────
-detect_os() {
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        echo "$PRETTY_NAME"
-    else
-        echo "Unknown OS"
+# ------- CHECK OS -------
+check_os() {
+    if ! command -v apt >/dev/null 2>&1; then
+        echo -e "${RED}  ✘ This installer requires APT (Debian/Ubuntu). ${DIM}[ROOTFAHIM]${NC}"
+        exit 1
     fi
 }
 
-# ─────────────────── SYSTEMD SERVICE ──────────────────────
-SERVICE_FILE="/etc/systemd/system/rfrs-bot.service"
-SERVICE_NAME="fvm"
+# ------- STEP HEADER -------
+step() {
+    local num="$1"
+    local title="$2"
+    echo
+    echo -e "${BLUE}  ┌──────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE}  │${NC} ${YELLOW}STEP ${num}${NC} ${WHITE}➤ ${title}${NC}"
+    echo -e "${BLUE}  └──────────────────────────────────────────────┘${NC}"
+}
 
-write_service() {
-    cat > "$SERVICE_FILE" << 'EOF'
-# ────────────────────────────────────────────────
-#   FVM Panel Service  •  Managed by ROOTFAHIM
-#   Watermark: ROOTFAHIM
-# ────────────────────────────────────────────────
+# ------- INSTALL -------
+main_install() {
+    step "1" "Installing GIT"
+    (apt-get update -y >/dev/null 2>&1 && apt-get install git -y >/dev/null 2>&1) &
+    spinner $! "Installing GIT package"
+
+    step "2" "Cloning Repository"
+    if [ -d "$INSTALL_DIR" ]; then
+        echo -e "${YELLOW}  ⚠ Directory exists, removing old ${DIM}[ROOTFAHIM]${NC}"
+        rm -rf "$INSTALL_DIR"
+    fi
+    (git clone "$REPO_URL" "$INSTALL_DIR" >/dev/null 2>&1) &
+    spinner $! "Cloning RootFahim/fvm-panel"
+
+    cd "$INSTALL_DIR" || { echo -e "${RED}  ✘ Cannot cd to $INSTALL_DIR ${DIM}[ROOTFAHIM]${NC}"; exit 1; }
+
+    step "3" "Installing Python3 & PIP"
+    (apt-get install python3 python3-pip -y >/dev/null 2>&1) &
+    spinner $! "Installing Python3 & PIP"
+
+    step "4" "Installing Requirements"
+    if [ -f "requirements.txt" ]; then
+        (pip3 install -r requirements.txt --break-system-packages >/dev/null 2>&1 || pip3 install -r requirements.txt >/dev/null 2>&1) &
+        spinner $! "Installing Python dependencies"
+    else
+        echo -e "${YELLOW}  ⚠ requirements.txt not found, skipping ${DIM}[ROOTFAHIM]${NC}"
+    fi
+
+    step "5" "Configuring .env"
+    if [ -f "test.env" ]; then
+        cp test.env .env
+        echo -e "${GREEN}  ✔ Copied test.env ➤ .env ${DIM}[ROOTFAHIM]${NC}"
+    elif [ -f ".env.example" ]; then
+        cp .env.example .env
+        echo -e "${GREEN}  ✔ Copied .env.example ➤ .env ${DIM}[ROOTFAHIM]${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ No env template found ${DIM}[ROOTFAHIM]${NC}"
+    fi
+
+    step "6" "Creating Systemd Service"
+    cat > "$SERVICE_FILE" << EOF
+# ============================================
+#   ROOTFAHIM FVM Panel Service
+#   Managed by ROOTFAHIM
+# ============================================
 [Unit]
-Description=FVM Panel Service
+Description=FVM Panel Service - ROOTFAHIM
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root
-ExecStart=/usr/bin/python3 /root/fvm.py
+WorkingDirectory=${INSTALL_DIR}
+ExecStart=/usr/bin/python3 ${INSTALL_DIR}/fvm.py
 Restart=always
 RestartSec=5
 User=root
@@ -154,163 +201,54 @@ User=root
 [Install]
 WantedBy=multi-user.target
 EOF
+    echo -e "${GREEN}  ✔ Service file written ${DIM}[ROOTFAHIM]${NC}"
+
+    step "7" "Reloading & Enabling Service"
+    (systemctl daemon-reload >/dev/null 2>&1) &
+    spinner $! "Reloading systemd daemon"
+    (systemctl enable "$SERVICE_NAME" >/dev/null 2>&1) &
+    spinner $! "Enabling ${SERVICE_NAME} service"
+
+    step "8" "Starting Service"
+    (systemctl restart "$SERVICE_NAME" >/dev/null 2>&1) &
+    spinner $! "Starting ${SERVICE_NAME} service"
+
+    sleep 1
+
+    step "9" "Service Status"
+    systemctl status "$SERVICE_NAME" --no-pager -l
 }
 
-# ─────────────────── INSTALL FUNCTION ─────────────────────
-install_fvm() {
-    print_banner
-    type_text "  >> Initializing FVM Panel installation..." "$CYAN" 0.01
-    type_text "  >> Watermark: ROOTFAHIM" "$MAGENTA" 0.01
-    sleep 0.5
-
-    # STEP 1: System update + deps
-    step "1/8" "Installing git..."
-    export DEBIAN_FRONTEND=noninteractive
-    run_spin "apt-get update" apt-get update -y
-    run_spin "apt-get install git" apt-get install -y git
-    type_text "  >> Git installed ✔" "$GREEN" 0.005
-
-    # STEP 2: Clone repo
-    step "2/8" "Cloning fvm-panel repository..."
-    cd /root
-    rm -rf fvm-panel
-    run_spin "git clone RootFahim/fvm-panel" \
-        git clone https://github.com/RootFahim/fvm-panel.git fvm-panel
-    cd fvm-panel
-    type_text "  >> Repository cloned successfully ✔" "$GREEN" 0.005
-
-    # STEP 3: Python pip
-    step "3/8" "Installing python3-pip..."
-    run_spin "apt-get install python3-pip" apt-get install -y python3-pip
-    type_text "  >> python3-pip installed ✔" "$GREEN" 0.005
-
-    # STEP 4: Requirements
-    step "4/8" "Installing Python requirements..."
-    if [[ -f requirements.txt ]]; then
-        ( pip3 install -r requirements.txt >/dev/null 2>&1 ) &
-        spinner "$!" "pip install -r requirements.txt"
-        type_text "  >> All Python requirements installed ✔" "$GREEN" 0.005
-    else
-        type_text "  !! requirements.txt not found, skipping." "$YELLOW" 0.005
-    fi
-
-    # STEP 5: Env setup
-    step "5/8" "Configuring environment (.env)..."
-    if [[ -f test.env ]]; then
-        cp test.env .env
-        type_text "  >> Copied test.env -> .env ✔" "$GREEN" 0.005
-    else
-        type_text "  !! test.env not found, skipping .env" "$YELLOW" 0.005
-    fi
-
-    # STEP 6: Systemd service (Aapki nayi file ke hisaab se)
-    step "6/8" "Writing systemd service..."
-    write_service
-    type_text "  >> Service file created: $SERVICE_FILE ✔" "$GREEN" 0.005
-    type_text "  >> (Watermark: ROOTFAHIM embedded)" "$DIM" 0.003
-
-    # STEP 7: Enable + start
-    step "7/8" "Reloading systemd & enabling service..."
-    run_spin "systemctl daemon-reload" systemctl daemon-reload
-    run_spin "systemctl enable $SERVICE_NAME" systemctl enable "$SERVICE_NAME"
-    run_spin "systemctl restart $SERVICE_NAME" systemctl restart "$SERVICE_NAME"
-    type_text "  >> Service enabled and started ✔" "$GREEN" 0.005
-
-    # STEP 8: Status
-    step "8/8" "Service status:"
+# ------- SUCCESS BANNER -------
+success_banner() {
     echo
-    systemctl status "$SERVICE_NAME" --no-pager || true
-
-    # ─── Final animated banner ───
-    echo
-    echo -e "${GREEN}${BOLD}"
+    echo -e "${GREEN}"
     cat << "EOF"
-   ┌──────────────────────────────────────────────────────────┐
-   │                                                          │
-   │      ✔  FVM PANEL INSTALLED SUCCESSFULLY!                │
-   │                                                          │
-   │      Service : fvm.service                               │
-   │      Path    : /root/fvm-panel                           │
-   │      Env     : /root/fvm-panel/.env                      │
-   │                                                          │
-   │      Watermark : ROOTFAHIM                               │
-   │                                                          │
-   └──────────────────────────────────────────────────────────┘
+    ╔══════════════════════════════════════════════════════╗
+    ║                                                      ║
+    ║     ✔  INSTALLATION COMPLETED SUCCESSFULLY!  ✔       ║
+    ║                                                      ║
+    ║          FVM PANEL IS NOW RUNNING - ROOTFAHIM        ║
+    ║                                                      ║
+    ╚══════════════════════════════════════════════════════╝
 EOF
-    echo -e "${RESET}"
-    type_text "  >> Panel is now live. Enjoy! (ROOTFAHIM)" "$CYAN" 0.02
+    echo -e "${NC}"
+    echo -e "${CYAN}  📌 Useful Commands:${NC}"
+    echo -e "${DIM}     ROOTFAHIM ▸${NC} ${WHITE}systemctl status ${SERVICE_NAME}${NC}    ${DIM}# Check status${NC}"
+    echo -e "${DIM}     ROOTFAHIM ▸${NC} ${WHITE}systemctl restart ${SERVICE_NAME}${NC}   ${DIM}# Restart${NC}"
+    echo -e "${DIM}     ROOTFAHIM ▸${NC} ${WHITE}systemctl stop ${SERVICE_NAME}${NC}      ${DIM}# Stop${NC}"
+    echo -e "${DIM}     ROOTFAHIM ▸${NC} ${WHITE}journalctl -u ${SERVICE_NAME} -f${NC}    ${DIM}# Live logs${NC}"
     echo
-    echo -e "${DIM}  Quick commands:${RESET}"
-    echo -e "    ${YELLOW}systemctl status fvm${RESET}    - check status"
-    echo -e "    ${YELLOW}systemctl restart fvm${RESET}   - restart"
-    echo -e "    ${YELLOW}journalctl -u fvm -f${RESET}    - live logs"
+    wm_footer
     echo
-    echo -e "${MAGENTA}${BOLD}         ══════ [ ROOTFAHIM • FVM PANEL ] ══════${RESET}"
+    typewriter "  💀 Thank you for using ROOTFAHIM Installer 💀" 0.02
     echo
 }
 
-# ─────────────────── MAIN MENU ────────────────────────────
-main_menu() {
-    print_banner
-    # Screenshot wala "Welcome" text hata diya gaya hai
-    echo -e "  ${GREEN}[1]${RESET} Install FVM Panel (fresh setup)"
-    echo -e "  ${GREEN}[2]${RESET} Update / Re-clone repository"
-    echo -e "  ${GREEN}[3]${RESET} Restart service"
-    echo -e "  ${GREEN}[4]${RESET} View service status"
-    echo -e "  ${GREEN}[5]${RESET} Uninstall FVM Panel"
-    echo -e "  ${RED}[0]${RESET} Exit"
-    echo
-    read -rp "  $(echo -e "${CYAN}Select [0-5]: ${RESET}")" choice
-
-    case "$choice" in
-        1) install_fvm ;;
-        2)
-            step "→" "Updating repository..."
-            cd /root
-            rm -rf fvm-panel
-            run_spin "Re-cloning repo" git clone https://github.com/RootFahim/fvm-panel.git fvm-panel
-            cd fvm-panel
-            [[ -f requirements.txt ]] && ( pip3 install -r requirements.txt >/dev/null 2>&1 ) &
-            spinner "$!" "Reinstalling requirements"
-            [[ -f test.env ]] && cp test.env .env
-            run_spin "Restarting service" systemctl restart "$SERVICE_NAME"
-            type_text "  >> Update complete ✔ (ROOTFAHIM)" "$GREEN"
-            ;;
-        3)
-            step "→" "Restarting service..."
-            run_spin "systemctl restart $SERVICE_NAME" systemctl restart "$SERVICE_NAME"
-            type_text "  >> Service restarted ✔" "$GREEN"
-            ;;
-        4)
-            step "→" "Service status"
-            systemctl status "$SERVICE_NAME" --no-pager || true
-            ;;
-        5)
-            step "→" "Uninstalling FVM Panel..."
-            read -rp "  ${RED}Are you sure? [y/N]: ${RESET}" ans
-            if [[ "$ans" =~ ^[Yy]$ ]]; then
-                systemctl stop "$SERVICE_NAME" 2>/dev/null || true
-                systemctl disable "$SERVICE_NAME" 2>/dev/null || true
-                rm -f "$SERVICE_FILE"
-                rm -rf /root/fvm-panel
-                systemctl daemon-reload
-                type_text "  >> FVM Panel uninstalled. (ROOTFAHIM)" "$GREEN"
-            else
-                type_text "  >> Cancelled." "$YELLOW"
-            fi
-            ;;
-        0|"") exit 0 ;;
-        *) type_text "  !! Invalid choice!" "$RED" ;;
-    esac
-}
-
-# ─────────────────── ENTRYPOINT ───────────────────────────
+# ------- ENTRY -------
+show_banner
 check_root
-type_text "  Detected OS: $(detect_os)" "$DIM" 0.005
-sleep 0.4
-
-if [[ "${1:-}" == "--auto" ]]; then
-    install_fvm
-else
-    main_menu
-fi
+check_os
+progress_bar 1.2 "Preparing environment"
+main_install
+success_banner
