@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-#   FVM PANEL AUTO INSTALLER
+#   FVM PANEL AUTO INSTALLER (FIXED VERSION)
 #   Author  : ROOTFAHIM
-#   Version : 2.0
+#   Version : 2.1 (Venv Support)
 #   GitHub  : https://github.com/RootFahim
 # ============================================================
 #   WATERMARK : ROOTFAHIM
@@ -19,7 +19,6 @@ M='\033[0;35m'
 C='\033[0;36m'
 W='\033[1;37m'
 DIM='\033[2m'
-BLINK='\033[5m'
 NC='\033[0m'
 
 # ---------- CONFIG ----------
@@ -29,6 +28,7 @@ SERVICE_NAME="fvm"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 PY_SCRIPT="/root/fvm.py"
 LOG_FILE="/var/log/rootfahim-installer.log"
+VENV_DIR="$INSTALL_DIR/venv"
 
 # ---------- HELPERS ----------
 log()  { echo -e "${C}[ROOTFAHIM]${NC} $*" | tee -a "$LOG_FILE"; }
@@ -56,7 +56,7 @@ show_banner() {
 EOF
   echo -e "${NC}"
   echo -e "${C}┌──────────────────────────────────────────────────────────────────┐${NC}"
-  echo -e "${C}│${W}         🔥  FVM PANEL — AUTO INSTALLER v2.0  🔥              ${C}│${NC}"
+  echo -e "${C}│${W}         🔥  FVM PANEL — AUTO INSTALLER v2.1  🔥              ${C}│${NC}"
   echo -e "${C}│${DIM}              Powered by: ${M}ROOTFAHIM${DIM}  |  Watermarked Build      ${C}│${NC}"
   echo -e "${C}└──────────────────────────────────────────────────────────────────┘${NC}"
   echo ""
@@ -93,25 +93,6 @@ typewriter() {
   echo
 }
 
-# ---------- PROGRESS BAR ----------
-progress_bar() {
-  local duration=${1:-3}
-  local steps=40
-  local sleep_time=$(awk "BEGIN {print $duration/$steps}")
-  echo -ne "${C}[ROOTFAHIM]${NC} ${W}Progress: ${NC}"
-  for (( i=0; i<=steps; i++ )); do
-    local pct=$(( i * 100 / steps ))
-    local filled=$(( i * 30 / steps ))
-    local empty=$(( 30 - filled ))
-    printf "\r${C}[ROOTFAHIM]${NC} ${W}Progress:${NC} ${G}["
-    printf '█%.0s' $(seq 1 $filled 2>/dev/null)
-    printf ' %.0s' $(seq 1 $empty 2>/dev/null)
-    printf "]${NC} ${Y}%3d%%${NC}" "$pct"
-    sleep "$sleep_time"
-  done
-  echo ""
-}
-
 # ---------- STEP HEADER ----------
 step() {
   echo ""
@@ -127,7 +108,13 @@ run_step() {
   "$@" >> "$LOG_FILE" 2>&1 &
   local pid=$!
   spinner "$pid" "$msg"
-  wait "$pid" || { err "Failed: $msg"; exit 1; }
+  wait "$pid" || { 
+    err "Failed: $msg"
+    echo -e "${R}--- Last 10 lines of log ---${NC}"
+    tail -n 10 "$LOG_FILE" | sed 's/^/  /'
+    echo -e "${R}----------------------------${NC}"
+    exit 1
+  }
   ok "$msg — Done"
 }
 
@@ -144,7 +131,7 @@ main() {
   # ---------- STEP 1: Update & Prereqs ----------
   step "1/7" "Updating System & Installing Prerequisites"
   run_step "Updating package lists" bash -c "apt-get update -y"
-  run_step "Installing git, python3-pip, nano, curl" bash -c "apt-get install -y git python3-pip nano curl"
+  run_step "Installing git, python3-pip, python3-venv, nano, curl" bash -c "apt-get install -y git python3-pip python3-venv nano curl"
   ok "Prerequisites installed"
 
   # ---------- STEP 2: Clone Repo ----------
@@ -157,14 +144,22 @@ main() {
   fi
   ok "Repository ready"
 
-  # ---------- STEP 3: Install Python deps ----------
-  step "3/7" "Installing Python Requirements"
+  # ---------- STEP 3: Install Python deps (VENV FIX) ----------
+  step "3/7" "Installing Python Requirements (Virtual Environment)"
   if [[ -f "$INSTALL_DIR/requirements.txt" ]]; then
-    run_step "pip install -r requirements.txt" bash -c "cd $INSTALL_DIR && pip install -r requirements.txt --break-system-packages"
+    # Create venv if not exists
+    if [[ ! -d "$VENV_DIR" ]]; then
+      run_step "Creating virtual environment" python3 -m venv "$VENV_DIR"
+    else
+      warn "Virtual environment already exists — skipping creation"
+    fi
+    
+    # Install using venv pip
+    run_step "Installing requirements" bash -c "$VENV_DIR/bin/pip install --upgrade pip && $VENV_DIR/bin/pip install -r $INSTALL_DIR/requirements.txt"
+    ok "Python dependencies installed in venv"
   else
-    warn "requirements.txt not found — skipping"
+    warn "requirements.txt not found — skipping dependencies"
   fi
-  ok "Python dependencies installed"
 
   # ---------- STEP 4: Setup .env ----------
   step "4/7" "Configuring Environment"
@@ -202,8 +197,8 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root
-ExecStart=/usr/bin/python3 $PY_SCRIPT
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$VENV_DIR/bin/python3 $PY_SCRIPT
 Restart=always
 RestartSec=5
 User=root
@@ -223,8 +218,8 @@ EOF
   step "7/7" "Starting FVM Panel Service"
   run_step "Reloading systemd daemon" systemctl daemon-reload
   run_step "Enabling $SERVICE_NAME on boot" systemctl enable "$SERVICE_NAME"
-  run_step "Starting $SERVICE_NAME" systemctl restart "$SERVICE_NAME"
-  sleep 2
+  run_step "Restarting $SERVICE_NAME" systemctl restart "$SERVICE_NAME"
+  sleep 3
 
   # ---------- FINAL STATUS ----------
   echo ""
@@ -250,6 +245,7 @@ EOF
   else
     err "Service failed to start. Check logs:"
     echo -e "   ${Y}journalctl -u $SERVICE_NAME -n 50${NC}"
+    echo -e "   ${Y}tail -n 20 /var/log/rootfahim-installer.log${NC}"
   fi
   echo ""
   watermark
