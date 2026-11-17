@@ -43,7 +43,6 @@ EOF
     echo -e "${RESET}"
     echo -e "${YELLOW}${DIM}          ══════════ [ WATERMARK: ROOTFAHIM ] ══════════${RESET}"
     echo -e "${GREEN}${BOLD}             >> FVM PANEL AUTOMATED BASH INSTALLER <<${RESET}"
-    echo -e "${DIM}                      GitHub: RootFahim${RESET}"
     echo
 }
 
@@ -105,7 +104,7 @@ on_error() {
     echo
     echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${RED}║  ✖ INSTALLATION FAILED at line $1                            ${RESET}"
-    echo -e "${RED}║  Please check the error above. ROOTFAHIM                       ${RESET}"
+    echo -e "${RED}║  Please check the error above. ROOTFAHIM                     ${RESET}"
     echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${RESET}"
     exit 1
 }
@@ -133,7 +132,6 @@ detect_os() {
 # ─────────────────── SYSTEMD SERVICE ──────────────────────
 SERVICE_FILE="/etc/systemd/system/rfrs-bot.service"
 SERVICE_NAME="fvm"
-PROJECT_DIR="/root/fvm-panel"
 
 write_service() {
     cat > "$SERVICE_FILE" << 'EOF'
@@ -205,7 +203,7 @@ install_fvm() {
         type_text "  !! test.env not found, skipping .env" "$YELLOW" 0.005
     fi
 
-    # STEP 6: Systemd service
+    # STEP 6: Systemd service (Aapki nayi file ke hisaab se)
     step "6/8" "Writing systemd service..."
     write_service
     type_text "  >> Service file created: $SERVICE_FILE ✔" "$GREEN" 0.005
@@ -236,7 +234,6 @@ install_fvm() {
    │      Env     : /root/fvm-panel/.env                      │
    │                                                          │
    │      Watermark : ROOTFAHIM                               │
-   │      GitHub    : https://github.com/RootFahim            │
    │                                                          │
    └──────────────────────────────────────────────────────────┘
 EOF
@@ -255,7 +252,7 @@ EOF
 # ─────────────────── MAIN MENU ────────────────────────────
 main_menu() {
     print_banner
-    # Welcome text hata diya gaya hai, direct menu dikhega
+    # Screenshot wala "Welcome" text hata diya gaya hai
     echo -e "  ${GREEN}[1]${RESET} Install FVM Panel (fresh setup)"
     echo -e "  ${GREEN}[2]${RESET} Update / Re-clone repository"
     echo -e "  ${GREEN}[3]${RESET} Restart service"
